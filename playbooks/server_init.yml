@@ -1,5 +1,0 @@
----
-  - hosts: masters
-    become: true
-    roles:
-      - ~/code/docker_with_ansible/roles/docker-engine

@@ -1,0 +1,33 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  user: root
+  pre_tasks:
+  - include_vars: ~/dev/docker_with_ansible/ec2_vars/managers.yml
+  roles:
+  - ~/dev/docker_with_ansible/roles/provision-ec2-managers
+
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  user: root
+  pre_tasks:
+  - include_vars: ~/dev/docker_with_ansible/ec2_vars/nodes.yml
+  roles:
+  - ~/dev/docker_with_ansible/roles/provision-ec2-nodes
+
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Wait for the instances to boot by checking the ssh port
+      wait_for: host={{item}} port=22 delay=60 timeout=320 state=started
+      with_items: 
+        - "{{ groups['managers'] }}"
+        - "{{ groups['nodes'] }}"
+
+- hosts: managers:nodes
+  gather_facts: false
+  become: true
+  roles:
+    - ~/dev/docker_with_ansible/roles/docker-engine

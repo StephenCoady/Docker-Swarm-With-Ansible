@@ -1,0 +1,11 @@
+ec2_keypair: "new_key"
+ec2_security_group: "sg-c280eda4"
+ec2_instance_type: "t2.micro"
+ec2_image: "ami-d732f0b7"
+ec2_subnet_id: "subnet-a85f34cc"
+ec2_region: "us-west-2"
+ec2_tag_Name: "manager"
+ec2_tag_Type: "managers"
+ec2_tag_Environment: "instances"
+ec2_volume_size: 8
+ec2_managers_count: 0
