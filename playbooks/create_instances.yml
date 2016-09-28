@@ -24,7 +24,7 @@
   gather_facts: false
   tasks:
     - name: Wait for the instances to boot by checking the ssh port
-      wait_for: host={{item}} port=22 delay=60 timeout=320 state=started
+      wait_for: host={{item}} port=22 delay=30 timeout=320 state=started
       with_items: 
         - "{{ groups['managers'] }}"
         - "{{ groups['nodes'] }}"
@@ -96,3 +96,42 @@
         --advertise-addr={{ swarm_iface | default('eth0') }}:2377
         --token={{ token }}
         {{ groups['swarm_manager_ips'][0] }}:2377
+
+# starts the application on the swarm
+- hosts: swarm_manager_running[0]
+  become: true
+  tasks:
+    - name: start go application
+      shell: >
+        docker service create --name app --replicas 10 -p 80:8000 scoady2/whoami
+        
+# create the loadbalancer and install docker engine on the instance
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  user: root
+  pre_tasks:
+    - include_vars: ~/dev/docker_with_ansible/ec2_vars/loadbalancer.yml
+  roles:
+    - ~/dev/docker_with_ansible/roles/create-ec2-loadbalancer
+    
+# wait for all hosts to have ssh listening on port 22 before trying to connect
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Wait for the instances to boot by checking the ssh port
+      wait_for: host={{item}} port=22 delay=60 timeout=320 state=started
+      with_items: 
+        - "{{ groups['loadbalancers'] }}"
+
+- hosts: loadbalancers
+  gather_facts: false
+  become: true
+  roles:
+    - ~/dev/docker_with_ansible/roles/install-docker-engine
+
+# provision the loadbalancer
+- hosts: loadbalancers
+  become: true
+  roles:
+    - ~/dev/docker_with_ansible/roles/provision-ec2-loadbalancer

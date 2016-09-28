@@ -1,0 +1,30 @@
+---
+  - name: remove nginx directory if exists
+    file: path=/var/docker/nginx state=absent
+
+  - name: check nginx directory exists
+    file: path=/var/docker/nginx/log state=directory
+
+  - name: copy the config folder to the loadbalancer
+    copy: src=~/dev/docker_with_ansible/nginx_conf/conf.d/default.conf dest=/home/ubuntu/ owner=ubuntu
+  
+  - name: edit conf file to include the current hosts
+    lineinfile: dest=/home/ubuntu/default.conf insertbefore=BOF line=" } "
+          
+  - name: add hosts to conf file
+    lineinfile: dest=/home/ubuntu/default.conf insertbefore=BOF line="server {{ item }};"
+    with_items: 
+             - "{{ groups['managers'] }}"
+             - "{{ groups['nodes'] }}"
+
+  - name: open the file header
+    lineinfile: dest=/home/ubuntu/default.conf insertbefore=BOF line="upstream backend {"
+
+  - name: copy the Dockerfile to the instances
+    copy: src=~/dev/docker_with_ansible/Dockerfile dest=/home/ubuntu/ mode=0644
+
+  - name: Build the docker image using the copied file
+    command: docker build -t scoady2/nginx .
+    
+  - name: Run the NGINX container
+    command: docker run -d -p 80:80 scoady2/nginx
