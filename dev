@@ -4,4 +4,9 @@ vagrant-ubuntu-trusty-64 ansible_connection=local
 [master]
 
 
+
 [worker]
+
+
+
+[loadbalancer]
