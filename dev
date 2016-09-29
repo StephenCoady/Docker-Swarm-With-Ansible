@@ -2,11 +2,19 @@
 vagrant-ubuntu-trusty-64 ansible_connection=local
 
 [master]
+ec2-54-148-236-233.us-west-2.compute.amazonaws.com
+ec2-54-71-196-35.us-west-2.compute.amazonaws.com
 
 
 
 [worker]
+ec2-54-148-210-22.us-west-2.compute.amazonaws.com
+ec2-54-70-90-172.us-west-2.compute.amazonaws.com
+ec2-54-71-11-35.us-west-2.compute.amazonaws.com
+ec2-52-39-126-50.us-west-2.compute.amazonaws.com
+ec2-54-71-95-115.us-west-2.compute.amazonaws.com
 
 
 
 [loadbalancer]
+ec2-52-89-8-1.us-west-2.compute.amazonaws.com
