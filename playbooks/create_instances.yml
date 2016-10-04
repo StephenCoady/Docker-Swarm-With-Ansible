@@ -28,6 +28,7 @@
       with_items: 
         - "{{ groups['managers'] }}"
         - "{{ groups['nodes'] }}"
+      # could also use - pause: seconds=30
 
 # make sure the correct version of docker is installed on each instance
 - hosts: managers:nodes
