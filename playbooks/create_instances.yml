@@ -136,3 +136,12 @@
   become: true
   roles:
     - ~/dev/docker_with_ansible/roles/provision-ec2-loadbalancer
+    
+# starts the visualisation app on the manager
+- hosts: swarm_manager_running[0]
+  gather_facts: true
+  become: true
+  tasks:
+    - name: start visualisation application
+      shell: >
+        docker run -it -d -p 8080:8080 -e HOST=localhost -v /var/run/docker.sock:/var/run/docker.sock manomarks/visualizer
