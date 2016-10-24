@@ -18,6 +18,16 @@
     - include_vars: ~/dev/docker_with_ansible/ec2_vars/nodes.yml
   roles:
     - ~/dev/docker_with_ansible/roles/provision-ec2-nodes
+    
+# create the loadbalancer
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  user: root
+  pre_tasks:
+    - include_vars: ~/dev/docker_with_ansible/ec2_vars/loadbalancer.yml
+  roles:
+    - ~/dev/docker_with_ansible/roles/create-ec2-loadbalancer
 
 # wait for all hosts to have ssh listening on port 22 before trying to connect
 - hosts: localhost
@@ -26,12 +36,11 @@
     - name: Wait for the instances to boot by checking the ssh port
       wait_for: host={{item}} port=22 delay=30 timeout=320 state=started
       with_items: 
-        - "{{ groups['managers'] }}"
-        - "{{ groups['nodes'] }}"
-      # could also use - pause: seconds=30
+        - "{{ groups['loadbalancers'] }}" # logic here is that if the loadbalancer is ready then so are the other nodes
+
 
 # make sure the correct version of docker is installed on each instance
-- hosts: managers:nodes
+- hosts: managers:nodes:loadbalancers
   gather_facts: false
   become: true
   roles:
@@ -105,31 +114,6 @@
     - name: start go application
       shell: >
         docker service create --name app --replicas 10 -p 80:8000 scoady2/whoami
-        
-# create the loadbalancer and install docker engine on the instance
-- hosts: localhost
-  connection: local
-  gather_facts: false
-  user: root
-  pre_tasks:
-    - include_vars: ~/dev/docker_with_ansible/ec2_vars/loadbalancer.yml
-  roles:
-    - ~/dev/docker_with_ansible/roles/create-ec2-loadbalancer
-    
-# wait for all hosts to have ssh listening on port 22 before trying to connect
-- hosts: localhost
-  gather_facts: false
-  tasks:
-    - name: Wait for the instances to boot by checking the ssh port
-      wait_for: host={{item}} port=22 delay=60 timeout=320 state=started
-      with_items: 
-        - "{{ groups['loadbalancers'] }}"
-
-- hosts: loadbalancers
-  gather_facts: false
-  become: true
-  roles:
-    - ~/dev/docker_with_ansible/roles/install-docker-engine
 
 # provision the loadbalancer
 - hosts: loadbalancers
@@ -144,4 +128,4 @@
   tasks:
     - name: start visualisation application
       shell: >
-        docker run -it -d -p 8080:8080 -e HOST=localhost -v /var/run/docker.sock:/var/run/docker.sock manomarks/visualizer
+        docker run -it -d -p 8080:8080 -e HOST="{{ play_hosts[0] }}" -v /var/run/docker.sock:/var/run/docker.sock manomarks/visualizer
